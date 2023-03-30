@@ -1,21 +1,23 @@
 # theos-docker
 
-Docker image for Theos, based on Ubuntu 20.04.
+Docker image with theos and theos-jailed based on Ubuntu 20.04. Built to be used on CI.
 
 ## Building
 
-Clone this repo recursively and cd into it. Then,
-
 ```
-docker-compose up --build --no-start
+docker build --tag theos-docker:1.0 .
 ```
 
-## Usage
+## Debug usage
 
-Start the container whenever and in any directory, with
+Find the newly built image with
 
 ```
-docker start -i theos
+docker images
 ```
 
-Data stored in `~/work` will be persisted in a Docker volume even if the container is deleted and re-created.
+and then take the image ID of the fresh one and insert it into
+
+```
+docker run -i -t <image-id> /bin/bash
+```
