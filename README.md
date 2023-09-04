@@ -4,8 +4,14 @@ Docker image with theos and theos-jailed based on Ubuntu 20.04. Built to be used
 
 ## Building
 
+```bash
+docker build --tag theos-docker:11.4 .
 ```
-docker build --tag theos-docker:1.0 .
+
+The Docker image is bundled with a single iOS SDK. The default is iOS 11.4. To change this, set the build argument `SDK` to something from [the available patched iOS SDKs](https://github.com/theos/sdks) when building the Docker image.
+
+```bash
+docker build --build-arg SDK=iPhoneOS14.5 --tag theos-docker:14.5 .
 ```
 
 ## Debug usage
