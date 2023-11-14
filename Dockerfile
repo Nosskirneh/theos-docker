@@ -52,7 +52,8 @@ RUN apt-get update \
     && apt install -y \
         bash \
         curl \
-        sudo
+        sudo \
+        libplist-utils
 
 # Set the timezone (needed when theos installer installs the tzdata package).
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime \
