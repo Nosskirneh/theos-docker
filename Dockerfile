@@ -46,14 +46,41 @@ RUN cmake .. \
     && mv install_name_tool /out
 
 
+FROM --platform=linux/amd64 ubuntu:20.04 AS plistutil-builder
+RUN bash -c 'mkdir -p /out/{bin/.libs,lib}'
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+        build-essential \
+        checkinstall \
+        git \
+        autoconf \
+        automake \
+        libtool-bin \
+        # the last two should be optional for documentation or Python bindings,
+        # but autogen fails if they're not installed
+        doxygen \
+        cython
+
+# Clone repository.
+WORKDIR /usr/src/app
+RUN git clone https://github.com/libimobiledevice/libplist.git
+# Compile binary.
+WORKDIR /usr/src/app/libplist
+RUN ./autogen.sh \
+    && make \
+    && mv tools/plistutil /out/bin \
+    && mv tools/.libs/plistutil /out/bin/.libs/ \
+    && mv src/.libs/libplist-2.*.so* /out/lib/
+
+
 FROM --platform=linux/amd64 ubuntu:20.04
 # Install dependencies.
 RUN apt-get update \
     && apt install -y \
         bash \
         curl \
-        sudo \
-        libplist-utils
+        sudo
 
 # Set the timezone (needed when theos installer installs the tzdata package).
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime \
@@ -70,6 +97,8 @@ USER me
 ENV PATH="$PATH:/opt/theos/bin"
 COPY --from=plister-builder /out/plister /opt/theos/bin/
 COPY --from=install_name_tool-builder /out/install_name_tool /opt/theos/bin/
+COPY --from=plistutil-builder /out/bin/. /opt/theos/bin/
+COPY --from=plistutil-builder /out/lib/. /usr/lib/x86_64-linux-gnu/
 
 # Install theos.
 # Export CI to install iOS toolchain no questions asked.
