@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 ubuntu:20.04 AS ubuntu-swift
+FROM --platform=linux/amd64 ubuntu:24.04 AS ubuntu-swift
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
     && apt install -y \
@@ -7,10 +7,10 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         curl \
         libicu-dev \
         pkg-config
-RUN curl -OL https://swift.org/builds/swift-5.5.3-release/ubuntu2004/swift-5.5.3-RELEASE/swift-5.5.3-RELEASE-ubuntu20.04.tar.gz \
-    && tar xzf swift-5.5.3-RELEASE-ubuntu20.04.tar.gz \
-    && mv swift-5.5.3-RELEASE-ubuntu20.04 /usr/share/swift \
-    && rm swift-5.5.3-RELEASE-ubuntu20.04.tar.gz
+RUN curl -OL https://download.swift.org/swift-5.10.1-release/ubuntu2404/swift-5.10.1-RELEASE/swift-5.10.1-RELEASE-ubuntu24.04.tar.gz \
+    && tar xzf swift-5.10.1-RELEASE-ubuntu24.04.tar.gz \
+    && mv swift-5.10.1-RELEASE-ubuntu24.04 /usr/share/swift \
+    && rm swift-5.10.1-RELEASE-ubuntu24.04.tar.gz
 ENV PATH="$PATH:/usr/share/swift/usr/bin"
 
 
@@ -26,7 +26,7 @@ WORKDIR /usr/src/app/plister
 RUN swift build --configuration release -Xswiftc -static-stdlib && mv .build/release/plister /out
 
 
-FROM --platform=linux/amd64 ubuntu:20.04 AS install_name_tool-builder
+FROM --platform=linux/amd64 ubuntu:24.04 AS install_name_tool-builder
 RUN mkdir /out
 # Install cmake and git.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -46,7 +46,7 @@ RUN cmake .. \
     && mv install_name_tool /out
 
 
-FROM --platform=linux/amd64 ubuntu:20.04 AS plistutil-builder
+FROM --platform=linux/amd64 ubuntu:24.04 AS plistutil-builder
 RUN bash -c 'mkdir -p /out/{bin/.libs,lib}'
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
@@ -57,10 +57,13 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         autoconf \
         automake \
         libtool-bin \
-        # the last two should be optional for documentation or Python bindings,
+        # these two should be optional for documentation or Python bindings,
         # but autogen fails if they're not installed
         doxygen \
-        cython
+        cython3 \
+        # these are required to make autogen pass on ubuntu 24.04
+        python-is-python3 \
+        python3-setuptools
 
 # Clone repository.
 WORKDIR /usr/src/app
@@ -74,13 +77,14 @@ RUN ./autogen.sh \
     && mv src/.libs/libplist-2.*.so* /out/lib/
 
 
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:24.04
 # Install dependencies.
 RUN apt-get update \
     && apt install -y \
         bash \
         curl \
-        sudo
+        sudo \
+        adduser
 
 # Set the timezone (needed when theos installer installs the tzdata package).
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime \
